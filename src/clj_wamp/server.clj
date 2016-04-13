@@ -11,6 +11,7 @@
             [clojure.data.codec.base64 :as base64])
   (:import [org.httpkit.server AsyncChannel]
            [javax.crypto Mac]
+           java.util.Random
            [javax.crypto.spec SecretKeySpec]))
 
 (declare send!)
@@ -42,11 +43,11 @@
 
 (def project-version "clj-wamp/1.0.2")
 
-(def max-sess-id (atom 0))
+(def ^:private rand-gen (Random.))
+(def ^:private sess-id-max 9007199254740992) ; 2^53 per WAMP spec
 
-(defn- next-sess-id []
-  (swap! max-sess-id inc))
-
+(defn- new-sess-id []
+  (mod (.nextLong rand-gen) sess-id-max))
 
 ;; Client utils
 
@@ -58,7 +59,7 @@
   "Adds a websocket channel (or callback function) to a map of clients
   and returns a unique session id."
   [channel-or-fn]
-  (let [sess-id (str (System/currentTimeMillis) "-" (next-sess-id))]
+  (let [sess-id (new-sess-id)]
     (dosync (alter client-channels assoc sess-id channel-or-fn))
     sess-id))
 
