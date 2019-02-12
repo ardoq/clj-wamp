@@ -1,8 +1,7 @@
 (ns clj-wamp.server
   ^{:author "Christopher Martin"
     :doc "Clojure implementation of the WebSocket Application Messaging Protocol"}
-  (:use [clojure.core.incubator :only [dissoc-in]]
-        [clojure.string :only [split trim lower-case]])
+  (:use [clojure.string :only [split trim lower-case]])
   (:require [clojure.java.io :as io]
             [org.httpkit.server :as httpkit]
             [org.httpkit.timer :as timer]
@@ -116,6 +115,22 @@
   (dosync
     (alter topic-clients assoc-in [topic sess-id] true)
     (alter client-topics assoc-in [sess-id topic] true)))
+
+;; copied from clojure.core.incubator
+
+(defn dissoc-in
+  "Dissociates an entry from a nested associative structure returning a new
+  nested structure. keys is a sequence of keys. Any empty maps that result
+  will not be present in the new structure."
+  [m [k & ks :as keys]]
+  (if ks
+    (if-let [nextmap (get m k)]
+      (let [newmap (dissoc-in nextmap ks)]
+        (if (seq newmap)
+          (assoc m k newmap)
+          (dissoc m k)))
+      m)
+    (dissoc m k)))
 
 (defn topic-unsubscribe
   "Unsubscribes a websocket session from a topic."
